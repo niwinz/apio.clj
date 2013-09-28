@@ -1,6 +1,8 @@
 (ns apio.concurrency.core
-  (import (java.util.concurrent ForkJoinPool)))
+  (import (java.util.concurrent Executors)))
 
 ;; TODO: initialize forkjoin pool in dynamic context
 ;; using dynamic loaded configuration.
-(def *thread-pool* (ForkJoinPool.))
+
+(defn num-processes [] (.availableProcessors Runtime/getRuntime))
+(def *thread-pool* (Executors/newFixedThreadPool (* (num-processes) 2)))
