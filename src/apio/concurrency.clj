@@ -22,5 +22,5 @@
   [config]
   (let [num-procs (-> config :concurrency :pool-size)
         num-procs (if (nil? num-procs) (num-processes) num-procs)]
-    (println "Starting new thread-pool with " num-procs "threads.")
+    (println "Starting new thread-pool with" num-procs "threads.")
     (fixed-thread-pool num-procs)))

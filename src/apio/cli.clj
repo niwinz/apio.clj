@@ -1,9 +1,9 @@
 (ns apio.cli
-  (:require [apio.util :as util])
+  (:require [apio.core :as core])
   (:gen-class))
 
 (defn -main
   "I don't do a whole lot ... yet."
-  [configfile]
-  (let [data (util/read-configuration configfile)]
-    (println "Config file:", data)))
+  [path]
+  (core/with-config path
+    (println "Config file:", core/*config*)))
