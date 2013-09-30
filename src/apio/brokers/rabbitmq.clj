@@ -6,6 +6,11 @@
             [langohr.basic :as lb]
             [apio.core :as core]))
 
+(def ^{:const true} default-exchange-name "")
+(def ^{:const true} default-queue-name "niwi.be.queue.test")
+
+(defrecord Connection [con chan])
+
 (defn config->rabbitmq-settings
   "Read current configuration and build
   rabbitmq connection settings."
@@ -35,3 +40,37 @@
       (swap! settings assoc :password (:password rmq/*default-config*)))
 
     settings))
+
+(defn- connect
+  "Connect to rabbitmq and returns a connection."
+  []
+  (let [conf (config->rabbitmq-settings)]
+    (rmq/connect conf)))
+
+(defn- channel
+  "Open a new channel and returns it."
+  [connection]
+  (lch/open connection))
+
+
+(defn- message-handler
+  "Message handler wrapper."
+  [handler]
+  (let [wrapper (fn [ch, metadata, ^bytes payload]
+                  (handler ch, metadata, (String. payload "UTF-8")))]
+    wrapper))
+
+
+(defn initialize-connection
+  "Public api for initialize connection to rabbitmq and
+  attach task handler to it.
+  This function returns connection object that must be
+  closed on program stops."
+  [handler]
+  (let [conn (connect)
+        chan (channel conn)]
+    (lq/declare chan default-queue-name
+                :exclusive false :auto-delete true)
+    (lc/subscribe chan default-queue-name
+                  (message-handler handler) :auto-ack true)
+    (Connection. conn chan)))
