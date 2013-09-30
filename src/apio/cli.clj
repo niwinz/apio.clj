@@ -11,7 +11,9 @@
 (defn dispatch-task
   [pool task semaphore]
   (sem/acquire semaphore)
-  (let [task-wrapper (fn [] (task) (sem/release semaphore))]
+  (let [task-wrapper (fn []
+                       (task)
+                       (sem/release semaphore))]
     (thr/spawn pool task-wrapper)))
 
 ;; (defn sempahore-status-reporter
