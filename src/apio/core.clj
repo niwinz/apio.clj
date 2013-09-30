@@ -1,18 +1,21 @@
 (ns apio.core
   (:require [clojure.string :as string]
-            [apio.util :as u]
-            [apio.concurrency.threading :as cc-threading]
-            [apio.concurrency.queue :as cc-queue]
-            [apio.concurrency.queue :as cc-util]))
+            [apio.util :as util]))
 
-(def ^:dynamic *config* {})
+(def ^:dynamic *config* (atom {}))
 
-;; (defmacro with-config
-;;   "Bind config and evalutea the body."
-;;   [path & body]
-;;   `(binding [*config* (u/read-configuration ~path)]
-;;      (println "Reading configuration file:" ~path)
-;;      ~@body))
+(defmacro with-config
+  "Bind config and evalutea the body."
+  [path & body]
+  `(let [conf# (util/read-configuration ~path)]
+     (reset! *config* conf#)
+     (println "Setting config to:" conf#)
+     ~@body))
+
+(defn current-config
+  "Get current config value."
+  []
+  (deref *config*))
 
 (defn- is-clojure-task?
   "Checks if a name corresponds to clojure task or not."

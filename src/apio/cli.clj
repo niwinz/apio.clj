@@ -25,8 +25,9 @@
 
 (defn dispatcher-loop
   [queue]
-  (let [pool        (thr/start-pool (util/max-workers core/*config*))
-        semaphore   (sem/semaphore  (util/max-workers core/*config*))]
+  (let [numworkers  (util/max-workers (core/current-config))
+        pool        (thr/start-pool numworkers)
+        semaphore   (sem/semaphore numworkers)]
     (loop []
       (let [task (q/rcv queue)]
         (when (instance? Callable task)
@@ -34,16 +35,17 @@
     (thr/shutdown-pool pool)))
 
 (defn -main
-  [path]
-  (let [queue  (q/queue (util/max-prefetch core/*config*))
-        thr    (thr/thread #(dispatcher-loop queue))
-        tasks  (map (fn [n]
-                       (fn []
-                         (println "Thread:" (thr/current-thread-id) "Processing:" n )
-                         (thr/sleep (rand-int 1000)) 2)) (range 10))]
-    (doseq [t tasks]
-      (q/snd queue t))
+  [path & args]
+  (core/with-config path
+    (let [queue  (q/queue (util/max-prefetch core/*config*))
+          thr    (thr/thread #(dispatcher-loop queue))
+          tasks  (map (fn [n]
+                         (fn []
+                           (println "Thread:" (thr/current-thread-id) "Processing:" n "Config:" core/*config* )
+                           (thr/sleep (rand-int 4000)) 2)) (range 10))]
+      (doseq [t tasks]
+        (q/snd queue t))
 
-    ;; Send non callable value to shutdown dispatcher.
-    (q/snd queue 1)
-    (thr/join thr)))
+      ;; Send non callable value to shutdown dispatcher.
+      (q/snd queue 1)
+      (thr/join thr))))
