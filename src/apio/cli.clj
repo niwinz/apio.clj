@@ -16,13 +16,6 @@
                        (sem/release semaphore))]
     (thr/spawn pool task-wrapper)))
 
-;; (defn sempahore-status-reporter
-;;   [semaphore]
-;;   (loop []
-;;     (println "Current semaphore status:" (.availablePermits semaphore))
-;;     (thr/sleep 300)
-;;     (recur)))
-
 (defn dispatcher-loop
   [queue]
   (let [numworkers  (util/max-workers (core/current-config))
