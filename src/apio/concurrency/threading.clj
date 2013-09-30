@@ -19,6 +19,24 @@
     (.start th)
     th))
 
+(defn join
+  [thr]
+  (.join thr))
+
+(defn current-thread-id
+  []
+  (.getId (Thread/currentThread)))
+
 (defn spawn
   [pool func]
   (.submit pool func))
+
+(defn ^Integer num-processes
+  "Get number of processors."
+  []
+  (.availableProcessors (Runtime/getRuntime)))
+
+(defn sleep
+  [ms]
+  (java.lang.Thread/sleep ms))
+

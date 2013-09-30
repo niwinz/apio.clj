@@ -1,31 +1,47 @@
 (ns apio.cli
-  (:import (java.lang Thread))
+  (:import (java.lang Thread)
+           (java.util.concurrent Callable))
   (:require [apio.core :as core]
-            [apio.concurrency.threading :as cthreading]
-            [apio.concurrency.queue :as cqueue]
-            [apio.concurrency.util :as cutil])
+            [apio.util :as util]
+            [apio.concurrency.threading :as thr]
+            [apio.concurrency.semaphore :as sem]
+            [apio.concurrency.queue :as q])
   (:gen-class))
 
-(defn dispatcher
+(defn dispatch-task
+  [pool task semaphore]
+  (sem/acquire semaphore)
+  (let [task-wrapper (fn [] (task) (sem/release semaphore))]
+    (thr/spawn pool task-wrapper)))
+
+;; (defn sempahore-status-reporter
+;;   [semaphore]
+;;   (loop []
+;;     (println "Current semaphore status:" (.availablePermits semaphore))
+;;     (thr/sleep 300)
+;;     (recur)))
+
+(defn dispatcher-loop
   [queue]
-  (let [pool (cthreading/start-pool (cutil/max-workers core/*config*))]
+  (let [pool        (thr/start-pool (util/max-workers core/*config*))
+        semaphore   (sem/semaphore  (util/max-workers core/*config*))]
     (loop []
-      (let [task (cqueue/rcv queue)]
-        (when (instance? java.util.concurrent.Callable task)
-          (do (cthreading/spawn pool task) (recur)))))
-    (cthreading/shutdown-pool pool)))
+      (let [task (q/rcv queue)]
+        (when (instance? Callable task)
+          (do (dispatch-task pool task semaphore) (recur)))))
+    (thr/shutdown-pool pool)))
 
 (defn -main
   [path]
-  (let [queue   (cqueue/queue (cutil/max-prefetch core/*config*))
-        thr     (cthreading/thread #(dispatcher queue))
-        tasks   (map (fn [n]
+  (let [queue  (q/queue (util/max-prefetch core/*config*))
+        thr    (thr/thread #(dispatcher-loop queue))
+        tasks  (map (fn [n]
                        (fn []
-                         (println "Thread:" (.getId (Thread/currentThread)) "Processing:" n )
-                         (cutil/sleep (rand-int 1000)) 2)) (range 10))]
+                         (println "Thread:" (thr/current-thread-id) "Processing:" n )
+                         (thr/sleep (rand-int 1000)) 2)) (range 10))]
     (doseq [t tasks]
-      (cqueue/snd queue t))
+      (q/snd queue t))
 
     ;; Send non callable value to shutdown dispatcher.
-    (cqueue/snd queue 1)
-    (.join thr)))
+    (q/snd queue 1)
+    (thr/join thr)))
