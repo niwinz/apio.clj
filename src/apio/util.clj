@@ -22,3 +22,6 @@
   [conf]
   (let [conf-workers (-> conf :concurrency :workers)]
     (if (nil? conf-workers) *default-max-workers* conf-workers)))
+
+(defn parse-int [s]
+  (Integer. (re-find  #"\d+" s )))

@@ -4,12 +4,14 @@
             [langohr.queue :as lq]
             [langohr.consumers :as lc]
             [langohr.basic :as lb]
-            [apio.core :as core]))
+            [apio.core :as core]
+            [apio.util :as util])
+  (:gen-class))
 
 (def ^{:const true} default-exchange-name "")
 (def ^{:const true} default-queue-name "niwi.be.queue.test")
 
-(defrecord Connection [con chan])
+(defrecord Connection [conn chan])
 
 (defn config->rabbitmq-settings
   "Read current configuration and build
@@ -28,7 +30,7 @@
       (swap! settings assoc :host (:host rmq/*default-config*)))
 
     (if (not (nil? (:port conf)))
-      (swap! settings assoc :port (:port conf))
+      (swap! settings assoc :port (util/parse-int (:port conf)))
       (swap! settings assoc :port (:port rmq/*default-config*)))
 
     (if (not (nil? (:username conf)))
@@ -38,7 +40,6 @@
     (if (not (nil? (:password conf)))
       (swap! settings assoc :password (:password conf))
       (swap! settings assoc :password (:password rmq/*default-config*)))
-
     @settings))
 
 (defn- connect
@@ -52,14 +53,12 @@
   [connection]
   (lch/open connection))
 
-
 (defn- message-handler
   "Message handler wrapper."
   [handler]
   (let [wrapper (fn [ch, metadata, ^bytes payload]
                   (handler ch, metadata, (String. payload "UTF-8")))]
     wrapper))
-
 
 (defn initialize-connection
   "Public api for initialize connection to rabbitmq and
@@ -74,3 +73,15 @@
     (lc/subscribe chan default-queue-name
                   (message-handler handler) :auto-ack true)
     (Connection. conn chan)))
+
+(defn finish-connection
+  [^Connection conn]
+  (rmq/close (:chan conn))
+  (rmq/close (:conn conn)))
+
+(defn publish
+  [^Connection conn, ^String message]
+  (let [connection    (:conn conn)
+        channel       (:chan conn)]
+    (lb/publish channel default-exchange-name default-queue-name
+                message :content-type "text/plain" :type "greetings.hi")))

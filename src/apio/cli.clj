@@ -5,10 +5,11 @@
             [apio.util :as util]
             [apio.concurrency.threading :as thr]
             [apio.concurrency.semaphore :as sem]
-            [apio.concurrency.queue :as q])
+            [apio.concurrency.queue :as q]
+            [apio.brokers.rabbitmq :as mq])
   (:gen-class))
 
-(defn dispatch-task
+(defn dispatch-one-task
   [pool task semaphore]
   (sem/acquire semaphore)
   (let [task-wrapper (fn []
@@ -16,7 +17,7 @@
                        (sem/release semaphore))]
     (thr/spawn pool task-wrapper)))
 
-(defn dispatcher-loop
+(defn task-dispatcher
   [queue]
   (let [numworkers  (util/max-workers (core/current-config))
         pool        (thr/start-pool numworkers)
@@ -24,21 +25,37 @@
     (loop []
       (let [task (q/rcv queue)]
         (when (instance? Callable task)
-          (do (dispatch-task pool task semaphore) (recur)))))
+          (do (dispatch-one-task pool task semaphore) (recur)))))
     (thr/shutdown-pool pool)))
+
+(defn messages-dispatcher
+  [queue]
+  (let [task-generator  (fn [msg] #(println "Thread:" (thr/current-thread-id) "Msg:" msg))
+        wrapper (fn [c, m, d] (q/snd queue (task-generator d)))]
+    wrapper))
+
 
 (defn -main
   [path & args]
   (core/with-config path
-    (let [queue  (q/queue (util/max-prefetch core/*config*))
-          thr    (thr/thread #(dispatcher-loop queue))
-          tasks  (map (fn [n]
-                         (fn []
-                           (println "Thread:" (thr/current-thread-id) "Processing:" n "Config:" core/*config* )
-                           (thr/sleep (rand-int 4000)) 2)) (range 10))]
-      (doseq [t tasks]
-        (q/snd queue t))
+    (let [queue   (q/queue (util/max-prefetch core/*config*))
+          thr     (thr/thread #(task-dispatcher queue))
+          mq-conn (mq/initialize-connection (messages-dispatcher queue))]
 
-      ;; Send non callable value to shutdown dispatcher.
-      (q/snd queue 1)
+      ;; Add hook for key board interruption (sigint) and
+      ;; properly close RabbitMQ connection.
+      (let [hook (proxy [Thread] [] (run [] (mq/finish-connection mq-conn)))]
+        (.addShutdownHook (Runtime/getRuntime) hook))
+
+      (thr/sleep 1000)
+      (mq/publish mq-conn "Hello 1")
+      (thr/sleep 1000)
+      (mq/publish mq-conn "Hello 2")
+      (thr/sleep 1000)
+      (mq/publish mq-conn "Hello 3")
+      (thr/sleep 1000)
+      (mq/publish mq-conn "Hello 4")
+      (thr/sleep 1000)
+      (mq/publish mq-conn "Hello 5")
+
       (thr/join thr))))
