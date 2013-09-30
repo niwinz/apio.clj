@@ -34,7 +34,6 @@
         wrapper (fn [c, m, d] (q/snd queue (task-generator d)))]
     wrapper))
 
-
 (defn -main
   [path & args]
   (core/with-config path
