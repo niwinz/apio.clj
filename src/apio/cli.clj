@@ -42,7 +42,7 @@
           thr     (thr/thread #(task-dispatcher queue))
           mq-conn (mq/initialize-connection (messages-dispatcher queue))]
 
-      ;; Add hook for key board interruption (sigint) and
+      ;; Add hook for keyboard interruption (sigint) and
       ;; properly close RabbitMQ connection.
       (let [hook (proxy [Thread] [] (run [] (mq/finish-connection mq-conn)))]
         (.addShutdownHook (Runtime/getRuntime) hook))
