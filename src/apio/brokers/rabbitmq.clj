@@ -39,7 +39,7 @@
       (swap! settings assoc :password (:password conf))
       (swap! settings assoc :password (:password rmq/*default-config*)))
 
-    settings))
+    @settings))
 
 (defn- connect
   "Connect to rabbitmq and returns a connection."
