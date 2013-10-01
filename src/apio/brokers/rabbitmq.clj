@@ -4,6 +4,7 @@
             [langohr.queue :as lq]
             [langohr.consumers :as lc]
             [langohr.basic :as lb]
+            [apio.concurrency.threading :as thr]
             [apio.core :as core]
             [apio.util :as util])
   (:gen-class))
@@ -56,9 +57,13 @@
   (let [conf (config->rabbitmq-settings)]
     (try
       (rmq/connect conf)
-      (catch Exception e
+      (catch java.net.ConnectException e
         (do
           (.printStackTrace e)
+          (thr/sleep 300)
+
+          (println "\nSeems your connection parameters are wrong"
+                   "or rabbitmq service is down!")
           (System/exit 1))))))
 
 (defn initialize-channel [] (lch/open *connection*))
