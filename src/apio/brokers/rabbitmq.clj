@@ -10,8 +10,8 @@
 
 (def ^{:const true} default-exchange-name "")
 (def ^{:const true} default-queue-name "niwi.be.queue.test")
-
-(defrecord Connection [conn chan])
+(def ^{:dynamic true} *connection*)
+(def ^{:dynamic true} *channel*)
 
 (defn config->rabbitmq-settings
   "Read current configuration and build
@@ -42,46 +42,50 @@
       (swap! settings assoc :password (:password rmq/*default-config*)))
     @settings))
 
-(defn- connect
-  "Connect to rabbitmq and returns a connection."
-  []
-  (let [conf (config->rabbitmq-settings)]
-    (rmq/connect conf)))
-
-(defn- channel
-  "Open a new channel and returns it."
-  [connection]
-  (lch/open connection))
-
-(defn- message-handler
-  "Message handler wrapper."
+(defn- wrap-message-handler
+  "Private method that create lexycal scope closure
+  wrapping a message handler for convert a bytes payload
+  into utf-8 encoded string."
   [handler]
   (let [wrapper (fn [ch, metadata, ^bytes payload]
                   (handler ch, metadata, (String. payload "UTF-8")))]
     wrapper))
 
 (defn initialize-connection
-  "Public api for initialize connection to rabbitmq and
-  attach task handler to it.
-  This function returns connection object that must be
-  closed on program stops."
+  []
+  (let [conf (config->rabbitmq-settings)]
+    (try
+      (rmq/connect conf)
+      (catch Exception e
+        (do
+          (.printStackTrace e)
+          (System/exit 1))))))
+
+(defn initialize-channel [] (lch/open *connection*))
+
+(defn attach-message-handler
   [handler]
-  (let [conn (connect)
-        chan (channel conn)]
-    (lq/declare chan default-queue-name
-                :exclusive false :auto-delete true)
-    (lc/subscribe chan default-queue-name
-                  (message-handler handler) :auto-ack true)
-    (Connection. conn chan)))
+  (let [wrapped-handler (wrap-message-handler handler)]
+    (lq/declare *channel* default-queue-name :exclusive false :auto-delete true)
+    (lc/subscribe *channel* default-queue-name wrapped-handler :auto-ack true)))
 
-(defn finish-connection
-  [^Connection conn]
-  (rmq/close (:chan conn))
-  (rmq/close (:conn conn)))
+(defmacro with-connection
+  [& body]
+  `(if (not (bound? #'*connection*))
+     ;; If connection vars are bound
+     ;; connect, execute body and disconnect.
+     (binding [*connection* (initialize-connection)]
+       (binding [*channel*    (initialize-channel)]
+         ~@body
+         (rmq/close *channel*)
+         (rmq/close *connection*)))
 
-(defn publish
-  [^Connection conn, ^String message]
-  (let [connection    (:conn conn)
-        channel       (:chan conn)]
-    (lb/publish channel default-exchange-name default-queue-name
-                message :content-type "text/plain" :type "greetings.hi")))
+     ;; Else, only execute body but does not disconnect.
+     (do ~@body)))
+
+(defn deliver-message
+  [^String message]
+  (with-connection
+    (lb/publish *channel* default-exchange-name default-queue-name message
+                :content-type "text/plain" :type "greetings.hi")))
+

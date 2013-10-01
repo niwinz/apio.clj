@@ -38,23 +38,25 @@
   [path & args]
   (core/with-config path
     (let [queue   (q/queue (util/max-prefetch core/*config*))
-          thr     (thr/thread #(task-dispatcher queue))
-          mq-conn (mq/initialize-connection (messages-dispatcher queue))]
+          thr     (thr/thread #(task-dispatcher queue))]
 
       ;; Add hook for keyboard interruption (sigint) and
       ;; properly close RabbitMQ connection.
-      (let [hook (proxy [Thread] [] (run [] (mq/finish-connection mq-conn)))]
-        (.addShutdownHook (Runtime/getRuntime) hook))
+      ;; (let [hook (proxy [Thread] [] (run [] (mq/finish-connection mq-conn)))]
+      ;;   (.addShutdownHook (Runtime/getRuntime) hook))
 
-      (thr/sleep 1000)
-      (mq/publish mq-conn "Hello 1")
-      (thr/sleep 1000)
-      (mq/publish mq-conn "Hello 2")
-      (thr/sleep 1000)
-      (mq/publish mq-conn "Hello 3")
-      (thr/sleep 1000)
-      (mq/publish mq-conn "Hello 4")
-      (thr/sleep 1000)
-      (mq/publish mq-conn "Hello 5")
+      (mq/with-connection
+        (mq/attach-message-handler (messages-dispatcher queue))
 
-      (thr/join thr))))
+        (thr/sleep 1000)
+        (mq/deliver-message "Hello 1")
+        (thr/sleep 1000)
+        (mq/deliver-message "Hello 2")
+        (thr/sleep 1000)
+        (mq/deliver-message "Hello 3")
+        (thr/sleep 1000)
+        (mq/deliver-message "Hello 4")
+        (thr/sleep 1000)
+        (mq/deliver-message "Hello 5")
+
+        (thr/join thr)))))

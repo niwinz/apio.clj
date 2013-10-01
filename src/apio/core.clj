@@ -1,5 +1,6 @@
 (ns apio.core
-  (:require [clojure.string :as string]
+  (:require [clojure.data.json :as json]
+            [clojure.string :as string]
             [apio.util :as util]))
 
 (def ^:dynamic *config* (atom {}))
@@ -30,3 +31,9 @@
     (let [[nsname, fnname] (string/split task-name #"/")]
       (ns-resolve (symbol nsname) (symbol fnname)))
     nil))
+
+(defn send-task
+  "Build a task signature and send it to a broker."
+  [name & params]
+  (let [signature       {:name name :params params}
+        signature-json  (json/write-str signature)]))
