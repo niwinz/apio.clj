@@ -59,12 +59,12 @@
       (rmq/connect conf)
       (catch java.net.ConnectException e
         (do
-          (.printStackTrace e)
+          (util/print-stacktrace e)
           (thr/sleep 300)
 
           (println "\nSeems your connection parameters are wrong"
                    "or rabbitmq service is down!")
-          (System/exit 1))))))
+          (util/exit 1))))))
 
 (defn initialize-channel [] (lch/open *connection*))
 
