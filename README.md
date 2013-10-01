@@ -10,9 +10,9 @@ Download from http://example.com/FIXME.
 
 ## Usage
 
-FIXME: explanation
+Run worker:
 
-    $ java -jar apio.clj-0.1.0-standalone.jar [args]
+    $ java -jar apio.clj-0.1.0-standalone.jar config.ini
 
 ## Options
 
