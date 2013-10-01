@@ -48,7 +48,7 @@
   into utf-8 encoded string."
   [handler]
   (let [wrapper (fn [ch, metadata, ^bytes payload]
-                  (handler ch, metadata, (String. payload "UTF-8")))]
+                  (handler (String. payload "UTF-8") metadata))]
     wrapper))
 
 (defn initialize-connection

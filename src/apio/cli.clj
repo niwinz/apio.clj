@@ -31,7 +31,7 @@
 (defn messages-dispatcher
   [queue]
   (let [task-generator  (fn [msg] #(println "Thread:" (thr/current-thread-id) "Msg:" msg))
-        wrapper (fn [c, m, d] (q/snd queue (task-generator d)))]
+        wrapper (fn [d & args] (q/snd queue (task-generator d)))]
     wrapper))
 
 (defn -main
