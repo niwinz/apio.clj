@@ -2,7 +2,6 @@
   (:import (java.lang Thread)
            (java.util.concurrent Callable))
   (:require [apio.core :as core]
-            [apio.util :as util]
             [apio.concurrency.threading :as thr]
             [apio.concurrency.semaphore :as sem]
             [apio.concurrency.queue :as q]
@@ -19,7 +18,7 @@
 
 (defn task-dispatcher
   [queue]
-  (let [numworkers  (util/max-workers (core/current-config))
+  (let [numworkers  (core/max-workers)
         pool        (thr/start-pool numworkers)
         semaphore   (sem/semaphore numworkers)]
     (loop []
@@ -37,7 +36,7 @@
 (defn -main
   [path & args]
   (core/with-config path
-    (let [queue   (q/queue (util/max-prefetch core/*config*))
+    (let [queue   (q/queue (core/max-prefetch))
           thr     (thr/thread #(task-dispatcher queue))]
 
       ;; Add hook for keyboard interruption (sigint) and
