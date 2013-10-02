@@ -5,6 +5,7 @@
             [apio.concurrency.threading :as thr]
             [apio.concurrency.semaphore :as sem]
             [apio.concurrency.queue :as q]
+            [apio.brokers.core :as brk]
             [apio.brokers.rabbitmq :as mq])
   (:gen-class))
 
@@ -44,18 +45,11 @@
       ;; (let [hook (proxy [Thread] [] (run [] (mq/finish-connection mq-conn)))]
       ;;   (.addShutdownHook (Runtime/getRuntime) hook))
 
-      (mq/with-connection
-        (mq/attach-message-handler (messages-dispatcher queue))
-
+      (brk/with-connection-and-handler (messages-dispatcher queue)
         (thr/sleep 1000)
-        (mq/deliver-message "Hello 1")
+        (brk/deliver-message "Hello 1")
         (thr/sleep 1000)
-        (mq/deliver-message "Hello 2")
+        (brk/deliver-message "Hello 2")
         (thr/sleep 1000)
-        (mq/deliver-message "Hello 3")
-        (thr/sleep 1000)
-        (mq/deliver-message "Hello 4")
-        (thr/sleep 1000)
-        (mq/deliver-message "Hello 5")
-
+        (brk/deliver-message "Hello 3")
         (thr/join thr)))))

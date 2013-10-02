@@ -11,8 +11,6 @@
 
 (def ^{:const true} default-exchange-name "")
 (def ^{:const true} default-queue-name "niwi.be.queue.test")
-(def ^{:dynamic true} *connection*)
-(def ^{:dynamic true} *channel*)
 
 (defn config->rabbitmq-settings
   "Read current configuration and build
@@ -43,6 +41,21 @@
       (swap! settings assoc :password (:password rmq/*default-config*)))
     @settings))
 
+(defn- connect [conf]
+  (try
+    (rmq/connect conf)
+    (catch java.net.ConnectException e
+      (do
+        (util/print-stacktrace e)
+        (thr/sleep 300)
+
+        (println "\nSeems your connection parameters are wrong"
+                 "or rabbitmq service is down!")
+          (core/exit 1)))))
+
+(defn- channel [conn]
+  (lch/open conn))
+
 (defn- wrap-message-handler
   "Private method that create lexycal scope closure
   wrapping a message handler for convert a bytes payload
@@ -52,45 +65,28 @@
                   (handler (String. payload "UTF-8") metadata))]
     wrapper))
 
+(defrecord Connection [conn chan])
+
 (defn initialize-connection
   []
-  (let [conf (config->rabbitmq-settings)]
-    (try
-      (rmq/connect conf)
-      (catch java.net.ConnectException e
-        (do
-          (util/print-stacktrace e)
-          (thr/sleep 300)
+  (let [conf (config->rabbitmq-settings)
+        conn (connect conf)
+        chan (channel conn)]
+    (Connection. conn chan)))
 
-          (println "\nSeems your connection parameters are wrong"
-                   "or rabbitmq service is down!")
-          (util/exit 1))))))
-
-(defn initialize-channel [] (lch/open *connection*))
+(defn shutdown-connection [conn]
+  (rmq/close (:chan conn))
+  (rmq/close (:conn conn)))
 
 (defn attach-message-handler
-  [handler]
-  (let [wrapped-handler (wrap-message-handler handler)]
-    (lq/declare *channel* default-queue-name :exclusive false :auto-delete true)
-    (lc/subscribe *channel* default-queue-name wrapped-handler :auto-ack true)))
-
-(defmacro with-connection
-  [& body]
-  `(if (not (bound? #'*connection*))
-     ;; If connection vars are bound
-     ;; connect, execute body and disconnect.
-     (binding [*connection* (initialize-connection)]
-       (binding [*channel*    (initialize-channel)]
-         ~@body
-         (rmq/close *channel*)
-         (rmq/close *connection*)))
-
-     ;; Else, only execute body but does not disconnect.
-     (do ~@body)))
+  [^Connection connection, handler]
+  (let [wrapped-handler (wrap-message-handler handler)
+        chan            (:chan connection)]
+    (lq/declare chan default-queue-name :exclusive false :auto-delete true)
+    (lc/subscribe chan default-queue-name wrapped-handler :auto-ack true)))
 
 (defn deliver-message
-  [^String message]
-  (with-connection
-    (lb/publish *channel* default-exchange-name default-queue-name message
+  [^Connection connection, ^String message]
+  (let [chan (:chan connection)]
+    (lb/publish chan default-exchange-name default-queue-name message
                 :content-type "text/plain" :type "greetings.hi")))
-
