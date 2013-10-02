@@ -1,8 +1,8 @@
-(defproject apio.clj "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
-  :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+(defproject apio.clj "0.1.0"
+  :description "Async task queue (like celery but for clojure and java)"
+  :url "https://github.com/niwibe/apio.clj"
+  :license {:name "Apache 2.0"
+            :url "http://www.apache.org/licenses/LICENSE-2.0.txt"}
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/data.json "0.2.3"]
                  [com.novemberain/langohr "1.5.0"]]
