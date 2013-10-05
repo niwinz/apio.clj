@@ -1,5 +1,5 @@
 package apio;
 
-import java.lang.IFn;
+import clojure.lang.IFn;
 
 public interface Task extends IFn {}
