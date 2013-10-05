@@ -1,5 +1,5 @@
 (ns apio.concurrency.queue
-  (:import (apio.internal Queue)))
+  (:import (apio Queue)))
 
 ;; Queue management.
 

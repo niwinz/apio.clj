@@ -1,4 +1,4 @@
-package apio.internal;
+package apio;
 
 import java.util.concurrent.LinkedBlockingQueue;
 
