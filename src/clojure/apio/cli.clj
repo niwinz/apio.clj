@@ -53,4 +53,6 @@
         (tasks/send-task "hellow-world" 1 2 3)
         (thr/sleep 1000)
         (tasks/send-task "hellow-world" 4 5 6)
+        (thr/sleep 1000)
+        (tasks/send-task "hellow-world2" 4 5 6)
         (thr/join thr)))))
