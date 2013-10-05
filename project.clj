@@ -11,4 +11,7 @@
                  ;; [com.taoensso/carmine "2.2.1"]
   :main apio.cli
   ;; :aot :all
-  :profiles {:uberjar {:aot :all}})
+  :profiles {:uberjar {:aot :all}}
+  :source-paths ["src/clojure"]
+  :java-source-paths ["src/java"]
+  :jvm-opts ["-Xmx2g"])
