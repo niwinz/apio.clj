@@ -1,12 +1,13 @@
 (ns apio.cli
   (:import (java.lang Thread)
-           (java.util.concurrent Callable))
+           (java.util.concurrent Callable)
+           (java.util.concurrent LinkedBlockingQueue))
   (:require [apio.core :as core]
             [apio.concurrency.threading :as thr]
             [apio.concurrency.semaphore :as sem]
             [apio.concurrency.queue :as q]
-            [apio.brokers.core :as brk]
-            [apio.brokers.rabbitmq :as mq])
+            [apio.tasks :as tasks]
+            [apio.brokers.core :as brk])
   (:gen-class))
 
 (defn dispatch-one-task
@@ -18,7 +19,7 @@
     (thr/spawn pool task-wrapper)))
 
 (defn task-dispatcher
-  [queue]
+  [^LinkedBlockingQueue queue]
   (let [numworkers  (core/max-workers)
         pool        (thr/start-pool numworkers)
         semaphore   (sem/semaphore numworkers)]
@@ -29,14 +30,24 @@
     (thr/shutdown-pool pool)))
 
 (defn messages-dispatcher
-  [queue]
-  (let [task-generator  (fn [msg] #(println "Thread:" (thr/current-thread-id) "Msg:" msg))
-        wrapper (fn [d & args] (q/snd queue (task-generator d)))]
-    wrapper))
+  "Broker callback for receive messages."
+  [^LinkedBlockingQueue queue]
+  (let [dispatcher (fn [^String message & args]
+                     (let [unit (tasks/exec-unit-from-message message)]
+                       (if (not (nil? unit))
+                         (q/snd queue unit)
+                         (println "- Message:" message " does not corresponds to any task."))))]
+    dispatcher))
 
 (defn -main
   [path & args]
   (core/with-config path
+    ;; Preload all need libraries for
+    ;; dynamic resolve
+    ;; TODO: make it more generic and customizable
+    (load "apio_examples/test")
+    (load "apio/brokers/rabbitmq")
+
     (let [queue   (q/queue (core/max-prefetch))
           thr     (thr/thread #(task-dispatcher queue))]
 
@@ -47,9 +58,7 @@
 
       (brk/with-connection-and-handler (messages-dispatcher queue)
         (thr/sleep 1000)
-        (brk/deliver-message "Hello 1")
+        (tasks/send-task "hellow-world" 1 2 3)
         (thr/sleep 1000)
-        (brk/deliver-message "Hello 2")
-        (thr/sleep 1000)
-        (brk/deliver-message "Hello 3")
+        (tasks/send-task "hellow-world" 4 5 6)
         (thr/join thr)))))

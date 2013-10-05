@@ -1,6 +1,5 @@
 (ns apio.brokers.core
-  (:require [apio.core :as core])
-  (:gen-class))
+  (:require [apio.core :as core]))
 
 (def ^{:dynamic true} *connection*)
 
@@ -29,6 +28,7 @@
          connection#    (connect)
          attach-fn#     (ns-resolve (symbol backend-ns#)
                                     (symbol "attach-message-handler"))]
+
      (attach-fn# connection# ~handler)
      ~@body
      (disconnect connection#)))

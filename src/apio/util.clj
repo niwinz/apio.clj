@@ -6,3 +6,4 @@
 (defn print-stacktrace [exception]
   (.printStackTrace exception))
 
+(defn uuid [] (str (java.util.UUID/randomUUID)))

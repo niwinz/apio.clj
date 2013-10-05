@@ -10,5 +10,5 @@
                  ;; [com.taoensso/nippy "2.1.0"]
                  ;; [com.taoensso/carmine "2.2.1"]
   :main apio.cli
-  :aot :all
+  ;; :aot :all
   :profiles {:uberjar {:aot :all}})
