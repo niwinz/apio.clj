@@ -42,12 +42,6 @@
 (defn -main
   [path & args]
   (core/with-config path
-    ;; Preload all need libraries for
-    ;; dynamic resolve
-    ;; TODO: make it more generic and customizable
-    (load "apio_examples/test")
-    (load "apio/brokers/rabbitmq")
-
     (let [queue   (q/queue (core/max-prefetch))
           thr     (thr/thread #(task-dispatcher queue))]
 
