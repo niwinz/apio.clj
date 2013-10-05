@@ -1,6 +1,5 @@
 (ns apio.cli
-  (:import (java.lang Thread)
-           (apio Queue))
+  (:import apio.Queue)
   (:require [apio.core :as core]
             [apio.concurrency.threading :as thr]
             [apio.concurrency.semaphore :as sem]
