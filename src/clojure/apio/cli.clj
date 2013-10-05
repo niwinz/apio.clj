@@ -1,7 +1,6 @@
 (ns apio.cli
   (:import (java.lang Thread)
-           (java.util.concurrent Callable)
-           (java.util.concurrent LinkedBlockingQueue))
+           (apio.internal Queue))
   (:require [apio.core :as core]
             [apio.concurrency.threading :as thr]
             [apio.concurrency.semaphore :as sem]
@@ -19,19 +18,18 @@
     (thr/spawn pool task-wrapper)))
 
 (defn task-dispatcher
-  [^LinkedBlockingQueue queue]
+  [^Queue queue]
   (let [numworkers  (core/max-workers)
         pool        (thr/start-pool numworkers)
         semaphore   (sem/semaphore numworkers)]
     (loop []
       (let [task (q/rcv queue)]
-        (when (instance? Callable task)
-          (do (dispatch-one-task pool task semaphore) (recur)))))
+          (do (dispatch-one-task pool task semaphore) (recur))))
     (thr/shutdown-pool pool)))
 
 (defn messages-dispatcher
   "Broker callback for receive messages."
-  [^LinkedBlockingQueue queue]
+  [^Queue queue]
   (let [dispatcher (fn [^String message & args]
                      (let [unit (tasks/exec-unit-from-message message)]
                        (if (not (nil? unit))

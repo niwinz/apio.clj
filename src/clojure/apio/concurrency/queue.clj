@@ -1,12 +1,12 @@
 (ns apio.concurrency.queue
-  (:import (java.util.concurrent LinkedBlockingQueue)))
+  (:import (apio.internal Queue)))
 
 ;; Queue management.
 
 (defn queue
   "Get channel."
   [num-procs]
-  (LinkedBlockingQueue. num-procs))
+  (Queue. num-procs))
 
 (defn rcv
   [ch]
