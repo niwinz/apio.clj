@@ -33,7 +33,12 @@
     (if (not (nil? full-name))
       (if (is-clojure-task? full-name)
         (let [[nsname, fnname] (string/split full-name #"/")]
-          (ns-resolve (symbol nsname) (symbol fnname)))))))
+          (ns-resolve (symbol nsname) (symbol fnname)))
+        (let [cls       (Class/forName full-name)
+              instance  (.newInstance cls)
+              wrapper   (fn [& args] (try (.run instance (vec args))
+                                        (catch Exception e (.printStackTrace e))))]
+          wrapper)))))
 
 (defn exec-unit-from-message
   "Given json encoded message, resolve it into

@@ -10,8 +10,7 @@
                  ;; [com.taoensso/nippy "2.1.0"]
                  ;; [com.taoensso/carmine "2.2.1"]
   :main apio.cli
-  ;; :aot :all
   :profiles {:uberjar {:aot :all}}
-  :source-paths ["src/clojure"]
-  :java-source-paths ["src/java"]
-  :jvm-opts ["-Xmx2g"])
+  :source-paths ["src/clojure" "examples"]
+  :java-source-paths ["src/java", "examples"]
+  :jvm-opts ["-server" "-Xmx2g"])

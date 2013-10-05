@@ -2,6 +2,6 @@
   (:require [apio.concurrency.threading :as thr])
   (:gen-class))
 
-(defn hellow-world
+(defn hello-world
   [& args]
-  (println "Thread:" (thr/current-thread-id) "Args:" args))
+  (println "Clojure Thread:" (thr/current-thread-id) "Args:" args))
