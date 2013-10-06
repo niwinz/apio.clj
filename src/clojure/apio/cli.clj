@@ -53,7 +53,7 @@
         (thr/sleep 1000)
         (tasks/send-task "hello-world" 4 5 6)
         (thr/sleep 1000)
-        (tasks/send-task "hello-java" 7 8 9)
+        (tasks/send-task "hello-java" 7 8 9 {"a" 1})
         (thr/sleep 1000)
         (tasks/send-task "hello-world2" 10 11 12)
         (thr/join thr)))))

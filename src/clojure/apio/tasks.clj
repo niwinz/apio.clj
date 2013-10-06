@@ -36,7 +36,7 @@
           (ns-resolve (symbol nsname) (symbol fnname)))
         (let [cls       (Class/forName full-name)
               instance  (.newInstance cls)
-              wrapper   (fn [& args] (try (.run instance (vec args))
+              wrapper   (fn [& args] (try (.run instance (java.util.ArrayList. (vec args)))
                                         (catch Exception e (.printStackTrace e))))]
           wrapper)))))
 
