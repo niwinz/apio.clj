@@ -6,21 +6,14 @@
 (defn connect []
   (let [backend-ns (core/current-broker-ns)
         connect-fn (ns-resolve (symbol backend-ns)
-                               (symbol "initialize-connection"))]
+                               (symbol "acquire-channel"))]
     (connect-fn)))
 
 (defn disconnect [conn]
   (let [backend-ns      (core/current-broker-ns)
         disconnect-fn   (ns-resolve (symbol backend-ns)
-                                    (symbol "shutdown-connection"))]
+                                    (symbol "release-channel"))]
     (disconnect-fn conn)))
-
-(defmacro with-connection
-  [& body]
-  `(let [connection# (connect)]
-     (println "Macro:" connection#)
-     ~@body
-     (disconnect connection#)))
 
 (defmacro with-connection-and-handler
   [handler & body]
@@ -28,7 +21,6 @@
          connection#    (connect)
          attach-fn#     (ns-resolve (symbol backend-ns#)
                                     (symbol "attach-message-handler"))]
-
      (attach-fn# connection# ~handler)
      ~@body
      (disconnect connection#)))

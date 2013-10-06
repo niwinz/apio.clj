@@ -19,27 +19,24 @@
   (let [conf      (core/current-config)
         conf      (-> conf :broker)
         settings  (atom {})]
-
     (if (not (nil? (:vhost conf)))
       (swap! settings assoc :vhost (:vhost conf))
       (swap! settings assoc :vhost (:vhost rmq/*default-config*)))
-
     (if (not (nil? (:host conf)))
       (swap! settings assoc :host (:host conf))
       (swap! settings assoc :host (:host rmq/*default-config*)))
-
     (if (not (nil? (:port conf)))
       (swap! settings assoc :port (util/parse-int (:port conf)))
       (swap! settings assoc :port (:port rmq/*default-config*)))
-
     (if (not (nil? (:username conf)))
       (swap! settings assoc :username (:username conf))
       (swap! settings assoc :username (:username rmq/*default-config*)))
-
     (if (not (nil? (:password conf)))
       (swap! settings assoc :password (:password conf))
       (swap! settings assoc :password (:password rmq/*default-config*)))
     @settings))
+
+;; Backend connection functions
 
 (defn- connect [conf]
   (try
@@ -67,16 +64,38 @@
 
 (defrecord Connection [conn chan])
 
-(defn initialize-connection
-  []
-  (let [conf (config->rabbitmq-settings)
-        conn (connect conf)
-        chan (channel conn)]
-    (Connection. conn chan)))
+;; Connection management
 
-(defn shutdown-connection [conn]
-  (rmq/close (:chan conn))
-  (rmq/close (:conn conn)))
+(def ^{:private true :dynamic true} *connection* (atom nil))
+(def ^{:private true :dynamic true} *channels* (ref []))
+
+;; High level connection functions.
+;; Public API
+
+(defn acquire-channel
+  "Get channel from pool or create new
+  if pool is empty."
+  []
+  (if (nil? (deref *connection*))
+    (reset! *connection* (connect (config->rabbitmq-settings))))
+  (dosync
+    (ensure *channels*)
+    (let [ch    (peek @*channels*)
+          rs    (if (nil? ch) nil (pop @*channels*))]
+      (if rs
+        (do (ref-set *channels* rs) (Connection. *connection* ch))
+        (do (Connection. *connection* (channel @*connection*)))))))
+
+(defn release-channel
+  "Release a used channel"
+  [^Connection c]
+  (let [chan  (:chan c)
+        ok    (dosync
+                (ensure *channels*)
+                (if (< (count @*channels*) 5)
+                  (do (alter *channels* conj chan) true)
+                  false))]
+    (if (not ok) (rmq/close chan))))
 
 (defn attach-message-handler
   [^Connection connection, handler]

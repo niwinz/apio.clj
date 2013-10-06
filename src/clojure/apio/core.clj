@@ -20,7 +20,6 @@
   []
   (deref *config*))
 
-
 (defn ^Integer max-prefetch
   "Get a main queue size. Like MAX_PREFETCH configuration
   on celery."
