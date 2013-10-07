@@ -1,8 +1,6 @@
 (ns apio.brokers.core
   (:require [apio.core :as core]))
 
-(def ^{:dynamic true} *connection*)
-
 (defn connect []
   (let [backend-ns (core/current-broker-ns)
         connect-fn (ns-resolve (symbol backend-ns)
