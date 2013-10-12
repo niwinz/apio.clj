@@ -23,21 +23,37 @@
 
 ;; Low level functions
 
+(defn make-clojure-unit
+  [^clojure.lang.IFn unit]
+  (let [wrapper (fn [& args]
+                  (try {:result (apply unit args)}
+                    (catch Exception e (do (.printStackTrace e) {:error (.getMessage e)}))))]
+    (fn [& args]
+      (let [result (apply wrapper args)]
+        (println "[clj] Result:" result)
+        result))))
+
+(defn make-java-unit
+  [^apio.TaskUnit unit]
+  (fn [& args]
+    (let [result (.exec unit (java.util.ArrayList. (vec args)))
+          result (into {} result)]
+      (println "[java] Result:" result)
+      result)))
+
 (defn resolve-fn-by-name
   "Given a name, search in a properly way a registred
   function for that name."
   [^String task-name]
   (let [all-tasks (-> (core/current-config) :tasks)
         full-name ((keyword task-name) all-tasks)]
-
     (if (not (nil? full-name))
       (if (is-clojure-task? full-name)
-        (let [[nsname, fnname] (string/split full-name #"/")]
-          (ns-resolve (symbol nsname) (symbol fnname)))
+        (let [[nsname, fnname]  (string/split full-name #"/")]
+          (make-clojure-unit (ns-resolve (symbol nsname) (symbol fnname))))
         (let [cls       (Class/forName full-name)
-              instance  (.newInstance cls)
-              wrapper   (fn [& args] (.exec instance (java.util.ArrayList. (vec args))))]
-          wrapper)))))
+              instance  (.newInstance cls)]
+          (make-java-unit instance))))))
 
 (defn exec-unit-from-message
   "Given json encoded message, resolve it into

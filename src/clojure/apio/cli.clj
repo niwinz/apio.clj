@@ -23,7 +23,7 @@
         semaphore   (sem/semaphore numworkers)]
     (loop []
       (let [task (q/rcv queue)]
-          (do (dispatch-one-task pool task semaphore) (recur))))
+        (do (dispatch-one-task pool task semaphore) (recur))))
     (thr/shutdown-pool pool)))
 
 (defn messages-dispatcher
