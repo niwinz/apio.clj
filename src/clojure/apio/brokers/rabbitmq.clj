@@ -19,19 +19,19 @@
   (let [conf      (core/current-config)
         conf      (-> conf :broker)
         settings  (atom {})]
-    (if (not (nil? (:vhost conf)))
+    (if-not (nil? (:vhost conf))
       (swap! settings assoc :vhost (:vhost conf))
       (swap! settings assoc :vhost (:vhost rmq/*default-config*)))
-    (if (not (nil? (:host conf)))
+    (if-not (nil? (:host conf))
       (swap! settings assoc :host (:host conf))
       (swap! settings assoc :host (:host rmq/*default-config*)))
-    (if (not (nil? (:port conf)))
+    (if-not (nil? (:port conf))
       (swap! settings assoc :port (util/parse-int (:port conf)))
       (swap! settings assoc :port (:port rmq/*default-config*)))
-    (if (not (nil? (:username conf)))
+    (if-not (nil? (:username conf))
       (swap! settings assoc :username (:username conf))
       (swap! settings assoc :username (:username rmq/*default-config*)))
-    (if (not (nil? (:password conf)))
+    (if-not (nil? (:password conf))
       (swap! settings assoc :password (:password conf))
       (swap! settings assoc :password (:password rmq/*default-config*)))
     @settings))
@@ -95,7 +95,7 @@
                 (if (< (count @*channels*) 5)
                   (do (alter *channels* conj chan) true)
                   false))]
-    (if (not ok) (rmq/close chan))))
+    (if-not ok (rmq/close chan))))
 
 (defn attach-message-handler
   [^Connection connection, handler]

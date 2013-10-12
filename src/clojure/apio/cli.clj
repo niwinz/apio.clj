@@ -31,7 +31,7 @@
   [^Queue queue]
   (let [dispatcher (fn [^String message & args]
                      (let [unit (tasks/exec-unit-from-message message)]
-                       (if (not (nil? unit))
+                       (if-not (nil? unit)
                          (q/snd queue unit)
                          (println "- Message:" message " does not corresponds to any task."))))]
     dispatcher))

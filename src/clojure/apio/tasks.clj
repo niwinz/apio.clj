@@ -47,7 +47,7 @@
   [^String task-name]
   (let [all-tasks (-> (core/current-config) :tasks)
         full-name ((keyword task-name) all-tasks)]
-    (if (not (nil? full-name))
+    (if-not (nil? full-name)
       (if (is-clojure-task? full-name)
         (let [[nsname, fnname]  (string/split full-name #"/")]
           (make-clojure-unit (ns-resolve (symbol nsname) (symbol fnname))))
@@ -62,5 +62,5 @@
   [^String message]
   (let [data      (json/read-str message :key-fn keyword)
         callable  (resolve-fn-by-name (:name data))]
-    (if (not (nil? callable))
+    (if-not (nil? callable)
       (fn [] (apply callable (:params data))) nil)))
