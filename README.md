@@ -6,29 +6,13 @@ NOTE: this project is an experiment.
 
 ## Installation
 
-Download from http://example.com/FIXME.
+TODO
 
 ## Usage
 
 Run worker:
 
     $ java -jar apio.clj-0.1.0-standalone.jar config.ini
-
-## Options
-
-FIXME: listing of options this app accepts.
-
-## Examples
-
-...
-
-### Bugs
-
-...
-
-### Any Other Sections
-### That You Think
-### Might be Useful
 
 ## License
 
