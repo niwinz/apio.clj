@@ -4,7 +4,6 @@
   (:require [apio.concurrency.threading :as thr])
   (:gen-class))
 
-
 (def ^:dynamic *root-logger* (LoggerFactory/getLogger Logger/ROOT_LOGGER_NAME))
 
 (defmacro with-logger
@@ -16,3 +15,13 @@
   [^String message & args]
   (into *root-logger*
     (.info (apply format (into [message] args)))))
+
+(defn error
+  [^String message & args]
+  (into *root-logger*
+    (.error (apply format (into [message] args)))))
+
+(defn debug
+  [^String message & args]
+  (into *root-logger*
+    (.debug (apply format (into [message] args)))))
