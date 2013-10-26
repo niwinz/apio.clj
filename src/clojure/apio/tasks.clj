@@ -3,6 +3,7 @@
             [clojure.string :as string]
             [apio.core :as core]
             [apio.util :as util]
+            [apio.logging :as log]
             [apio.brokers.core :as brk])
   (:gen-class))
 
@@ -30,7 +31,7 @@
                     (catch Exception e (do (.printStackTrace e) {:error (.getMessage e)}))))]
     (fn [& args]
       (let [result (apply wrapper args)]
-        (println "[clj] Result:" result)
+        (log/debug "[clj] Result: %s" result)
         result))))
 
 (defn make-java-unit
@@ -38,7 +39,7 @@
   (fn [& args]
     (let [result (.exec unit (java.util.ArrayList. (vec args)))
           result (into {} result)]
-      (println "[java] Result:" result)
+      (log/debug "[java] Result: %s" result)
       result)))
 
 (defn resolve-fn-by-name

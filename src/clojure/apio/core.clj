@@ -1,6 +1,7 @@
 (ns apio.core
   (:require [clojure.string :as string]
             [apio.config.inifiles :as ini]
+            [apio.logging :as log]
             [apio.concurrency.threading :refer [num-processes]]
             [apio.util :as util]))
 
@@ -57,7 +58,7 @@
         paths (concat defaults (config-preload-paths))]
 
     (doseq [item paths]
-      (println "Preload:" item)
+      (log/info "Preload: %s" item)
       (load item))))
 
 (defmacro with-config

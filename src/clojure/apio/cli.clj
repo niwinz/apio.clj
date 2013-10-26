@@ -5,6 +5,7 @@
             [apio.concurrency.semaphore :as sem]
             [apio.concurrency.queue :as q]
             [apio.tasks :as tasks]
+            [apio.logging :as log]
             [apio.brokers.core :as brk])
   (:gen-class))
 
@@ -33,7 +34,7 @@
                      (let [unit (tasks/exec-unit-from-message message)]
                        (if-not (nil? unit)
                          (q/snd queue unit)
-                         (println "- Message:" message " does not corresponds to any task."))))]
+                         (log/info "Message %s does not corresponds to any task" message))))]
     dispatcher))
 
 (defn -main
@@ -48,12 +49,12 @@
       ;;   (.addShutdownHook (Runtime/getRuntime) hook))
 
       (brk/with-connection-and-handler (messages-dispatcher queue)
-        (thr/sleep 1000)
         (tasks/send-task "hello-world" 1 2 3)
-        (thr/sleep 1000)
         (tasks/send-task "hello-world" 4 5 6)
-        (thr/sleep 1000)
-        (tasks/send-task "hello-java" 7 8 9 {"a" 1})
-        (thr/sleep 1000)
+        (tasks/send-task "hello-world" 4 5 6)
+        (tasks/send-task "hello-world" 4 5 6)
+        (tasks/send-task "hello-world" 4 5 6)
+        (tasks/send-task "hello-world" 4 5 6)
+        ;; (tasks/send-task "hello-java" 7 8 9 {"a" 1})
         (tasks/send-task "hello-world2" 10 11 12)
         (thr/join thr)))))
