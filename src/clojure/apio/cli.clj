@@ -8,7 +8,7 @@
             [apio.brokers.core :as brk])
   (:gen-class))
 
-(defn dispatch-one-task
+(defn- dispatch-task
   [pool task semaphore]
   (sem/acquire semaphore)
   (let [task-wrapper (fn []
@@ -16,17 +16,17 @@
                        (sem/release semaphore))]
     (thr/spawn pool task-wrapper)))
 
-(defn task-dispatcher
+(defn- dispatcher
   [^Queue queue]
   (let [numworkers  (core/max-workers)
         pool        (thr/start-pool numworkers)
         semaphore   (sem/semaphore numworkers)]
     (loop []
       (let [task (q/rcv queue)]
-        (do (dispatch-one-task pool task semaphore) (recur))))
+        (do (dispatch-task pool task semaphore) (recur))))
     (thr/shutdown-pool pool)))
 
-(defn messages-dispatcher
+(defn- messages-dispatcher
   "Broker callback for receive messages."
   [^Queue queue]
   (let [dispatcher (fn [^String message & args]
@@ -40,7 +40,7 @@
   [path & args]
   (core/with-config path
     (let [queue   (q/queue (core/max-prefetch))
-          thr     (thr/thread #(task-dispatcher queue))]
+          thr     (thr/thread #(dispatcher queue))]
 
       ;; Add hook for keyboard interruption (sigint) and
       ;; properly close RabbitMQ connection.
