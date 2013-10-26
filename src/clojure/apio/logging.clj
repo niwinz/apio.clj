@@ -13,15 +13,15 @@
 
 (defn info
   [^String message & args]
-  (into *root-logger*
+  (doto *root-logger*
     (.info (apply format (into [message] args)))))
 
 (defn error
   [^String message & args]
-  (into *root-logger*
+  (doto *root-logger*
     (.error (apply format (into [message] args)))))
 
 (defn debug
   [^String message & args]
-  (into *root-logger*
+  (doto *root-logger*
     (.debug (apply format (into [message] args)))))
